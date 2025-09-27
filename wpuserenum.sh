@@ -1,5 +1,4 @@
 #!/bin/bash
-# urlVictima "$urlName"; curl -sS -X GET "${urlName%/}/wp-json/wp/v2/users" | js-beautify | grep '"slug"' | awk -F: '{gsub(/[", ]/,"",$2);
 #Colores
 greenColour="\e[0;32m\033[1m"
 endColour="\033[0m\e[0m"
@@ -21,7 +20,7 @@ else
   echo -e "\e[32mLIKIT3CH\e[0m"
 fi
 
-echo -e "\n${greenColour}[+] Bienvenido a WPENUM, lista usuario válidos de Wordpress en dos clicks${endColour}\n"
+echo -e "\n${greenColour}[+] Bienvenido a WPENUM. Use la herramienta bajo su responsabilidad!${endColour}\n"
 function ctrl_c(){
 echo -e "\n\n${redColour}[!] Saliendo...${endColour}\n"
 exit 1 
@@ -32,7 +31,8 @@ trap ctrl_c INT
 
 function helpPanel(){
  echo -e "\n${purpleColour}[+] Bienvenido al panel de ayuda${endColour}\n "
- echo -e "\t${yellowColour}(-u)${endColour}${blueColour}Añade la URL de la web de la cual quieras listar usuarios.El formato debe ser https://www.example.com\n${endColour}"
+ echo -e "\t${yellowColour}(-u)${endColour}${blueColour}Añade la URL de la web de la cual quieras listar usuarios.El formato debe ser https://www.example.com${endColour}"
+ echo -e "\t${yellowColour}(-e)${endColour}${blueColour}Muestra y descarga todos los endpoints del wp-json.${endColour}"
  echo -e "\t${yellowColour}(-h)${endColour}${blueColour}Abre este panel de ayuda.${endColour}" 
 }
 
@@ -44,16 +44,21 @@ function urlVictima(){
 #Indicadores
 declare -i parameter_counter=0
 
-while getopts "u:h" arg; do
+while getopts "u:e:h" arg; do
    case $arg in
     u) urlName=$OPTARG; let parameter_counter+=1;;
-    h) ;;
+    e) urlName=$OPTARG; let parameter_counter+=2;;
+    h) ;;   
+   
    esac
 done
 
 if [ $parameter_counter -eq 1 ]; then
  urlVictima "$urlName"; curl -sS -X GET "${urlName%/}/wp-json/wp/v2/users" | js-beautify | grep '"slug"' | awk -F: '{gsub(/[", ]/,"",$2); print $2}' | tee usersfound.txt 
  echo -e "\n${turquoiseColour}[*] Se ha descargado un archivo con los usuarios encontrados llamado usersfound.txt en el directorio actual de trabajo${endColour}\n"
+elif [ $parameter_counter -eq 2 ]; then
+ urlVictima "$urlName"; curl -sS -X GET "${urlName%/}/wp-json" | js-beautify | grep "href" | tr -d '\\"' 2>/dev/null | awk '{print $2}' | tee endpoints.txt 
+ echo -e "\n${redColour}[*] Se ha descargado un archivo llamado endpoints.txt${endColours}\n"
 else
   helpPanel
 fi

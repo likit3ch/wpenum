@@ -33,6 +33,7 @@ function helpPanel(){
  echo -e "\n${purpleColour}[+] Bienvenido al panel de ayuda${endColour}\n "
  echo -e "\t${yellowColour}(-u)${endColour}${blueColour}Añade la URL de la web de la cual quieras listar usuarios.El formato debe ser https://www.example.com${endColour}"
  echo -e "\t${yellowColour}(-e)${endColour}${blueColour}Muestra y descarga todos los endpoints del wp-json.${endColour}"
+ echo -e "\t${yellowColour}(-v)${endColour}${blueColour}Verifica los endpoints guardados en endpoints.txt y muestra solo los que devuelvan HTTP 200.${endColour}"
  echo -e "\t${yellowColour}(-h)${endColour}${blueColour}Abre este panel de ayuda.${endColour}" 
 }
 
@@ -41,24 +42,47 @@ function urlVictima(){
  
 }
 
+function checkRute200(){
+ local file=$1
+ local line code
+if [ ! -f "$file" ]; then
+  echo -e "${redColour}[!] No existe el archivo ${file}${endColour}"
+  return 1 
+fi
+
+  echo -e "${turquoiseColour}[*] Verificando endpoints en ${file}...${endColour}\n"
+ while IFS= read -r line || [ -n "$line" ]; do
+    [ -z "$line" ] && continue
+    code=$(curl -sS -o /dev/null -w "%{http_code}" -I -L --max-time 10 "$line" 2>/dev/null || echo "000")
+    if [ "$code" == "200" ]; then
+      echo -e "${greenColour}[200]${endColour} $line"
+    fi
+  done < "$file"
+}
 #Indicadores
 declare -i parameter_counter=0
 
-while getopts "u:e:h" arg; do
+while getopts "u:e:hv" arg; do
    case $arg in
     u) urlName=$OPTARG; let parameter_counter+=1;;
     e) urlName=$OPTARG; let parameter_counter+=2;;
+    v) let parameter_counter+=3;;
     h) ;;   
    
    esac
 done
 
 if [ $parameter_counter -eq 1 ]; then
- urlVictima "$urlName"; curl -sS -X GET "${urlName%/}/wp-json/wp/v2/users" | js-beautify | grep '"slug"' | awk -F: '{gsub(/[", ]/,"",$2); print $2}' | tee usersfound.txt 
+ urlVictima "$urlName"; curl -sS -X GET "${urlName%/}/wp-json/wp/v2/users" | js-beautify 2>/dev/null | grep '"slug"' | awk -F: '{gsub(/[", ]/,"",$2); print $2}' | tee usersfound.txt 
  echo -e "\n${turquoiseColour}[*] Se ha descargado un archivo con los usuarios encontrados llamado usersfound.txt en el directorio actual de trabajo${endColour}\n"
+
 elif [ $parameter_counter -eq 2 ]; then
  urlVictima "$urlName"; curl -sS -X GET "${urlName%/}/wp-json" | js-beautify | grep "href" | tr -d '\\"' 2>/dev/null | awk '{print $2}' | tee endpoints.txt 
  echo -e "\n${redColour}[*] Se ha descargado un archivo llamado endpoints.txt${endColours}\n"
+
+elif [ $parameter_counter -eq 3 ]; then
+ checkRute200 endpoints.txt 
 else
   helpPanel
 fi
+

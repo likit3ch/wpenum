@@ -39,7 +39,22 @@ function helpPanel(){
 
 function urlVictima(){
  urlName=$1
- 
+ urlValidation="$(curl -sS -X GET "${urlName%/}/wp-json/wp/v2/users" 2>/dev/null | js-beautify 2>/dev/null | grep '"slug"' | awk -F: '{gsub(/[", ]/,"",$2); print $2}' | tee usersfound.txt)"
+ if [ "$urlValidation" ]; then
+ echo -e "${turquoiseColour}[*] Listando usuarios, espere...${endColour}\n"
+ else
+ echo -e "${redColour}[!] La web no expone usuarios, pruebe otra opción${endColour}"
+ fi
+}
+
+function urlVictima2(){
+ urlName=$1
+ urlValidation2="$(curl -sS -X GET "${urlName%/}/wp-json" 2>/dev/null | js-beautify 2>/dev/null | grep "href" | tr -d '\\"' 2>/dev/null | awk '{print $2}' | tee endpoints.txt)"
+ if [ "$urlValidation2" ]; then
+  echo -e "${turquoiseColour}[*] Listando endpoints, espere...${endColour}\n"
+ else
+ echo -e "${redColour}[!] La web no expone endpoints, lo sentimos <3${endColour}"
+ fi
 }
 
 function checkRute200(){
@@ -73,11 +88,12 @@ while getopts "u:e:hv" arg; do
 done
 
 if [ $parameter_counter -eq 1 ]; then
- urlVictima "$urlName"; curl -sS -X GET "${urlName%/}/wp-json/wp/v2/users" | js-beautify 2>/dev/null | grep '"slug"' | awk -F: '{gsub(/[", ]/,"",$2); print $2}' | tee usersfound.txt 
+ 
+ urlVictima "$urlName"; curl -sS -X GET "${urlName%/}/wp-json/wp/v2/users" 2>/dev/null | js-beautify 2>/dev/null | grep '"slug"' | awk -F: '{gsub(/[", ]/,"",$2); print $2}' | tee usersfound.txt 
  echo -e "\n${turquoiseColour}[*] Se ha descargado un archivo con los usuarios encontrados llamado usersfound.txt en el directorio actual de trabajo${endColour}\n"
 
 elif [ $parameter_counter -eq 2 ]; then
- urlVictima "$urlName"; curl -sS -X GET "${urlName%/}/wp-json" | js-beautify | grep "href" | tr -d '\\"' 2>/dev/null | awk '{print $2}' | tee endpoints.txt 
+ urlVictima2 "$urlName"; curl -sS -X GET "${urlName%/}/wp-json" 2>/dev/null | js-beautify 2>/dev/null | grep "href" | tr -d '\\"' 2>/dev/null | awk '{print $2}' | tee endpoints.txt 
  echo -e "\n${redColour}[*] Se ha descargado un archivo llamado endpoints.txt${endColours}\n"
 
 elif [ $parameter_counter -eq 3 ]; then

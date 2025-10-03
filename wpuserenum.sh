@@ -44,6 +44,7 @@ function urlVictima(){
  echo -e "${turquoiseColour}[*] Listando usuarios, espere...${endColour}\n"
  else
  echo -e "${redColour}[!] La web no expone usuarios, pruebe otra opción${endColour}"
+  exit 1 
  fi
 }
 
@@ -53,7 +54,8 @@ function urlVictima2(){
  if [ "$urlValidation2" ]; then
   echo -e "${turquoiseColour}[*] Listando endpoints, espere...${endColour}\n"
  else
- echo -e "${redColour}[!] La web no expone endpoints, lo sentimos <3${endColour}"
+  echo -e "${redColour}[!] La web no expone endpoints, lo sentimos <3${endColour}"
+  exit 1
  fi
 }
 
